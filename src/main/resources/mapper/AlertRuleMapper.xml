@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.distributed.monitor.mapper.AlertRuleMapper">
+    
+    <!-- 统计告警规则数量 -->
+    <select id="countAll" resultType="long">
+        SELECT COUNT(1) FROM alert_rule
+    </select>
+    
+    <!-- 按条件统计告警规则数量 -->
+    <select id="countByCondition" resultType="long">
+        SELECT COUNT(1) FROM alert_rule
+        <where>
+            <if test="ruleType != null and ruleType != ''">
+                AND rule_type = #{ruleType}
+            </if>
+            <if test="isActive != null">
+                AND is_active = #{isActive}
+            </if>
+        </where>
+    </select>
+    
+    <!-- 分页查询告警规则 -->
+    <select id="selectPage" resultType="AlertRule">
+        SELECT
+            id,
+            rule_name AS ruleName,
+            rule_code AS ruleCode,
+            rule_type AS ruleType,
+            device_group_id AS deviceGroupId,
+            condition_expr AS conditionExpr,
+            alert_level AS alertLevel,
+            alert_message AS alertMessage,
+            is_active AS isActive,
+            notify_users AS notifyUsers,
+            notify_methods AS notifyMethods,
+            created_at AS createdAt,
+            updated_at AS updatedAt
+        FROM alert_rule
+        ORDER BY id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+    
+    <!-- 按条件分页查询告警规则 -->
+    <select id="selectPageByCondition" resultType="AlertRule">
+        SELECT
+            id,
+            rule_name AS ruleName,
+            rule_code AS ruleCode,
+            rule_type AS ruleType,
+            device_group_id AS deviceGroupId,
+            condition_expr AS conditionExpr,
+            alert_level AS alertLevel,
+            alert_message AS alertMessage,
+            is_active AS isActive,
+            notify_users AS notifyUsers,
+            notify_methods AS notifyMethods,
+            created_at AS createdAt,
+            updated_at AS updatedAt
+        FROM alert_rule
+        <where>
+            <if test="ruleType != null and ruleType != ''">
+                AND rule_type = #{ruleType}
+            </if>
+            <if test="isActive != null">
+                AND is_active = #{isActive}
+            </if>
+        </where>
+        ORDER BY id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+    
+    <!-- 根据ID查询告警规则 -->
+    <select id="selectById" resultType="AlertRule">
+        SELECT
+            id,
+            rule_name AS ruleName,
+            rule_code AS ruleCode,
+            rule_type AS ruleType,
+            device_group_id AS deviceGroupId,
+            condition_expr AS conditionExpr,
+            alert_level AS alertLevel,
+            alert_message AS alertMessage,
+            is_active AS isActive,
+            notify_users AS notifyUsers,
+            notify_methods AS notifyMethods,
+            created_at AS createdAt,
+            updated_at AS updatedAt
+        FROM alert_rule
+        WHERE id = #{id}
+    </select>
+    
+    <!-- 根据规则编码查询告警规则 -->
+    <select id="selectByRuleCode" resultType="AlertRule">
+        SELECT
+            id,
+            rule_name AS ruleName,
+            rule_code AS ruleCode,
+            rule_type AS ruleType,
+            device_group_id AS deviceGroupId,
+            condition_expr AS conditionExpr,
+            alert_level AS alertLevel,
+            alert_message AS alertMessage,
+            is_active AS isActive,
+            notify_users AS notifyUsers,
+            notify_methods AS notifyMethods,
+            created_at AS createdAt,
+            updated_at AS updatedAt
+        FROM alert_rule
+        WHERE rule_code = #{ruleCode}
+    </select>
+    
+    <!-- 更新告警规则 -->
+    <update id="update">
+        UPDATE alert_rule
+        <set>
+            <if test="ruleName != null">rule_name = #{ruleName},</if>
+            <if test="conditionExpr != null">condition_expr = #{conditionExpr},</if>
+            <if test="alertLevel != null">alert_level = #{alertLevel},</if>
+            <if test="alertMessage != null">alert_message = #{alertMessage},</if>
+            <if test="isActive != null">is_active = #{isActive},</if>
+            updated_at = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+    
+</mapper>
+

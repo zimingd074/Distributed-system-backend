@@ -1,1 +1,91 @@
-spring.application.name=lab
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: distributed-monitor-system
+  
+  # 数据源配置
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/distributed_monitor?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: 123456
+    # 连接池配置
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
+      auto-commit: true
+      idle-timeout: 30000
+      pool-name: MonitorHikariCP
+      max-lifetime: 1800000
+      connection-timeout: 30000
+  
+  # Jackson配置
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+
+# MyBatis配置
+mybatis:
+  mapper-locations: classpath:mapper/**/*.xml
+  type-aliases-package: com.distributed.monitor.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    cache-enabled: true
+    lazy-loading-enabled: true
+    multiple-result-sets-enabled: true
+    use-column-label: true
+    use-generated-keys: true
+    default-statement-timeout: 25
+    default-fetch-size: 100
+
+# JWT配置
+jwt:
+  secret: distributed-monitor-system-secret-key-2025
+  expiration: 7200  # 访问令牌过期时间（秒），默认2小时
+  refresh-expiration: 604800  # 刷新令牌过期时间（秒），默认7天
+  header: Authorization
+  token-prefix: Bearer 
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.distributed.monitor: DEBUG
+    com.distributed.monitor.mapper: DEBUG
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{50} - %msg%n'
+    file: '%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{50} - %msg%n'
+  file:
+    name: logs/distributed-monitor.log
+    max-size: 10MB
+    max-history: 30
+
+# CORS跨域配置
+cors:
+  # 允许的前端地址，多个用逗号分隔
+  # 开发环境：http://localhost:5173,http://localhost:3000
+  # 生产环境：https://your-frontend-domain.com
+  allowed-origins: "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000"
+
+# WebSocket配置
+websocket:
+  path: /ws
+  allowed-origins: "*"
+
+# 文件上传配置
+file:
+  upload-dir: ./uploads
+  max-size: 10MB
+  
+# 报表配置
+report:
+  output-dir: ./reports
+  template-dir: ./templates

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.distributed.monitor.mapper.SysUserMapper">
+    
+    <!-- 更新用户信息 -->
+    <update id="update">
+        UPDATE sys_user
+        <set>
+            <if test="realName != null">real_name = #{realName},</if>
+            <if test="email != null">email = #{email},</if>
+            <if test="phone != null">phone = #{phone},</if>
+            <if test="avatarUrl != null">avatar_url = #{avatarUrl},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="isAdmin != null">is_admin = #{isAdmin},</if>
+            updated_at = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+    
+</mapper>
+

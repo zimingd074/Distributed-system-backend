@@ -1,0 +1,740 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.distributed.monitor.mapper.DeviceMapper">
+    
+    <!-- 统计设备数量 -->
+    <select id="countDevices" resultType="long">
+        SELECT COUNT(1) FROM device d
+        <where>
+            <if test="dto.keyword != null and dto.keyword != ''">
+                AND (d.device_name LIKE CONCAT('%', #{dto.keyword}, '%')
+                OR d.device_code LIKE CONCAT('%', #{dto.keyword}, '%'))
+            </if>
+            <if test="dto.groupId != null">
+                AND d.group_id = #{dto.groupId}
+            </if>
+            <if test="dto.deviceType != null and dto.deviceType != ''">
+                AND d.device_type = #{dto.deviceType}
+            </if>
+            <if test="dto.status != null and dto.status != ''">
+                AND d.status = #{dto.status}
+            </if>
+            <if test="dto.onlineStatus != null">
+                AND d.online_status = #{dto.onlineStatus}
+            </if>
+        </where>
+    </select>
+    
+    <!-- 查询设备列表 -->
+    <select id="selectDeviceList" resultType="Device">
+        SELECT
+            d.id,
+            d.device_code AS deviceCode,
+            d.device_name AS deviceName,
+            d.device_type AS deviceType,
+            d.group_id AS groupId,
+            d.ip_address AS ipAddress,
+            d.port,
+            d.mac_address AS macAddress,
+            d.location,
+            d.description,
+            d.status,
+            d.online_status AS onlineStatus,
+            d.last_heartbeat_time AS lastHeartbeatTime,
+            d.register_time AS registerTime,
+            d.created_at AS createdAt,
+            d.updated_at AS updatedAt
+        FROM device d
+        <where>
+            <if test="dto.keyword != null and dto.keyword != ''">
+                AND (d.device_name LIKE CONCAT('%', #{dto.keyword}, '%')
+                OR d.device_code LIKE CONCAT('%', #{dto.keyword}, '%'))
+            </if>
+            <if test="dto.groupId != null">
+                AND d.group_id = #{dto.groupId}
+            </if>
+            <if test="dto.deviceType != null and dto.deviceType != ''">
+                AND d.device_type = #{dto.deviceType}
+            </if>
+            <if test="dto.status != null and dto.status != ''">
+                AND d.status = #{dto.status}
+            </if>
+            <if test="dto.onlineStatus != null">
+                AND d.online_status = #{dto.onlineStatus}
+            </if>
+        </where>
+        ORDER BY d.created_at DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+    
+    <!-- 根据ID查询设备 -->
+    <select id="selectDeviceById" resultType="Device">
+        SELECT
+            id,
+            device_code AS deviceCode,
+            device_secret AS deviceSecret,
+            device_name AS deviceName,
+            device_type AS deviceType,
+            group_id AS groupId,
+            ip_address AS ipAddress,
+            port,
+            mac_address AS macAddress,
+            location,
+            description,
+            status,
+            online_status AS onlineStatus,
+            ws_connected AS wsConnected,
+            ws_session_id AS wsSessionId,
+            last_heartbeat_time AS lastHeartbeatTime,
+            last_auth_time AS lastAuthTime,
+            register_time AS registerTime,
+            created_at AS createdAt,
+            updated_at AS updatedAt
+        FROM device
+        WHERE id = #{id}
+    </select>
+    
+    <!-- 根据设备编码查询设备 -->
+    <select id="selectDeviceByCode" resultType="Device">
+        SELECT
+            id,
+            device_code AS deviceCode,
+            device_secret AS deviceSecret,
+            device_name AS deviceName,
+            device_type AS deviceType,
+            group_id AS groupId,
+            ip_address AS ipAddress,
+            port,
+            mac_address AS macAddress,
+            location,
+            description,
+            status,
+            online_status AS onlineStatus,
+            ws_connected AS wsConnected,
+            ws_session_id AS wsSessionId,
+            last_heartbeat_time AS lastHeartbeatTime,
+            last_auth_time AS lastAuthTime,
+            register_time AS registerTime,
+            created_at AS createdAt,
+            updated_at AS updatedAt
+        FROM device
+        WHERE device_code = #{deviceCode}
+    </select>
+    
+    <!-- 根据ID查询设备分组 -->
+    <select id="selectDeviceGroupById" resultType="DeviceGroup">
+        SELECT
+            id,
+            group_name AS groupName,
+            group_code AS groupCode,
+            parent_id AS parentId,
+            description,
+            sort_order AS sortOrder,
+            created_at AS createdAt,
+            updated_at AS updatedAt
+        FROM device_group
+        WHERE id = #{id}
+    </select>
+    
+    <!-- 检查设备编码是否存在 -->
+    <select id="existsByDeviceCode" resultType="boolean">
+        SELECT COUNT(1) > 0 FROM device WHERE device_code = #{deviceCode}
+    </select>
+    
+    <!-- 检查设备ID是否存在 -->
+    <select id="existsById" resultType="boolean">
+        SELECT COUNT(1) > 0 FROM device WHERE id = #{id}
+    </select>
+    
+    <!-- 插入设备 -->
+    <insert id="insertDevice" useGeneratedKeys="true" keyProperty="device.id">
+        INSERT INTO device (
+            device_code, device_secret, device_name, device_type, group_id,
+            ip_address, port, mac_address, location, description,
+            status, online_status, ws_connected, register_time, created_at, updated_at
+        ) VALUES (
+            #{device.deviceCode}, #{device.deviceSecret}, #{device.deviceName}, #{device.deviceType}, #{device.groupId},
+            #{device.ipAddress}, #{device.port}, #{device.macAddress}, #{device.location}, #{device.description},
+            #{device.status}, #{device.onlineStatus}, #{device.wsConnected}, #{device.registerTime}, #{device.createdAt}, #{device.updatedAt}
+        )
+    </insert>
+    
+    <!-- 更新设备 -->
+    <update id="updateDevice">
+        UPDATE device
+        <set>
+            <if test="device.deviceName != null">device_name = #{device.deviceName},</if>
+            <if test="device.deviceType != null">device_type = #{device.deviceType},</if>
+            <if test="device.groupId != null">group_id = #{device.groupId},</if>
+            <if test="device.ipAddress != null">ip_address = #{device.ipAddress},</if>
+            <if test="device.port != null">port = #{device.port},</if>
+            <if test="device.macAddress != null">mac_address = #{device.macAddress},</if>
+            <if test="device.location != null">location = #{device.location},</if>
+            <if test="device.description != null">description = #{device.description},</if>
+            <if test="device.status != null">status = #{device.status},</if>
+            <if test="device.onlineStatus != null">online_status = #{device.onlineStatus},</if>
+            <if test="device.wsConnected != null">ws_connected = #{device.wsConnected},</if>
+            <if test="device.wsSessionId != null">ws_session_id = #{device.wsSessionId},</if>
+            <if test="device.lastHeartbeatTime != null">last_heartbeat_time = #{device.lastHeartbeatTime},</if>
+            <if test="device.lastAuthTime != null">last_auth_time = #{device.lastAuthTime},</if>
+            <if test="device.updatedAt != null">updated_at = #{device.updatedAt},</if>
+            <if test="device.updatedAt == null">updated_at = NOW()</if>
+        </set>
+        WHERE id = #{device.id}
+    </update>
+    
+    <!-- 删除设备 -->
+    <delete id="deleteDevice">
+        DELETE FROM device WHERE id = #{id}
+    </delete>
+    
+    <!-- 查询设备分组列表 -->
+    <select id="selectDeviceGroups" resultType="DeviceGroup">
+        SELECT
+            id,
+            group_name AS groupName,
+            group_code AS groupCode,
+            parent_id AS parentId,
+            description,
+            sort_order AS sortOrder,
+            created_at AS createdAt,
+            updated_at AS updatedAt
+        FROM device_group
+        ORDER BY sort_order DESC, created_at DESC
+    </select>
+    
+    <!-- 查询设备统计 -->
+    <select id="selectDeviceStatistics" resultType="com.distributed.monitor.vo.device.DeviceStatisticsVO">
+        SELECT
+            COUNT(1) AS totalCount,
+            SUM(CASE WHEN online_status = 1 THEN 1 ELSE 0 END) AS onlineCount,
+            SUM(CASE WHEN online_status = 0 THEN 1 ELSE 0 END) AS offlineCount,
+            SUM(CASE WHEN status = 'fault' THEN 1 ELSE 0 END) AS faultCount,
+            SUM(CASE WHEN status = 'maintain' THEN 1 ELSE 0 END) AS maintainCount,
+            CASE 
+                WHEN COUNT(1) = 0 THEN 0
+                ELSE ROUND(SUM(CASE WHEN online_status = 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(1), 2)
+            END AS onlineRate
+        FROM device
+    </select>
+    
+    <!-- 查询分组统计 -->
+    <select id="selectGroupStatistics" resultType="com.distributed.monitor.vo.device.DeviceStatisticsVO$GroupStatistics">
+        SELECT
+            dg.id AS groupId,
+            dg.group_name AS groupName,
+            COUNT(d.id) AS deviceCount,
+            SUM(CASE WHEN d.online_status = 1 THEN 1 ELSE 0 END) AS onlineCount
+        FROM device_group dg
+        LEFT JOIN device d ON dg.id = d.group_id
+        GROUP BY dg.id, dg.group_name, dg.sort_order
+        ORDER BY dg.sort_order DESC, dg.id
+    </select>
+    
+    <!-- 查询设备配置 -->
+    <select id="selectDeviceConfig" resultType="DeviceConfig">
+        SELECT
+            id,
+            device_id AS deviceId,
+            config_key AS configKey,
+            config_value AS configValue,
+            config_type AS configType,
+            description,
+            is_synced AS isSynced,
+            sync_time AS syncTime,
+            created_at AS createdAt,
+            updated_at AS updatedAt
+        FROM device_config
+        WHERE device_id = #{id}
+        ORDER BY created_at DESC
+    </select>
+    
+    <!-- 查询未同步的配置 -->
+    <select id="selectUnsyncedConfig" resultType="DeviceConfig">
+        SELECT
+            id,
+            device_id AS deviceId,
+            config_key AS configKey,
+            config_value AS configValue,
+            config_type AS configType,
+            description,
+            is_synced AS isSynced,
+            sync_time AS syncTime,
+            created_at AS createdAt,
+            updated_at AS updatedAt
+        FROM device_config
+        WHERE device_id = #{id} AND is_synced = 0
+    </select>
+    
+    <!-- 更新或插入配置 -->
+    <insert id="updateOrInsertConfig">
+        INSERT INTO device_config (device_id, config_key, config_value, config_type, description, is_synced, created_at, updated_at)
+        VALUES (#{config.deviceId}, #{config.configKey}, #{config.configValue}, #{config.configType}, #{config.description}, #{config.isSynced}, NOW(), #{config.updatedAt})
+        ON DUPLICATE KEY UPDATE
+            config_value = #{config.configValue},
+            config_type = #{config.configType},
+            description = COALESCE(#{config.description}, description),
+            is_synced = #{config.isSynced},
+            updated_at = #{config.updatedAt}
+    </insert>
+    
+    <!-- 标记配置为已同步 -->
+    <update id="markConfigAsSynced">
+        UPDATE device_config
+        SET is_synced = 1, sync_time = #{syncTime}
+        WHERE device_id = #{deviceId} AND is_synced = 0
+        <if test="configKeys != null and configKeys.size() > 0">
+            AND config_key IN
+            <foreach collection="configKeys" item="key" open="(" separator="," close=")">
+                #{key}
+            </foreach>
+        </if>
+    </update>
+    
+    <!-- 查询设备最新状态历史 -->
+    <select id="selectDeviceLatestStatusHistory" resultType="DeviceStatusHistory">
+        SELECT
+            id,
+            device_id AS deviceId,
+            status_type AS statusType,
+            status_value AS statusValue,
+            door_status AS doorStatus,
+            door_controller_status AS doorControllerStatus,
+            report_time AS reportTime,
+            created_at AS createdAt
+        FROM device_status_history
+        WHERE device_id = #{id}
+        ORDER BY report_time DESC
+        LIMIT 1
+    </select>
+    
+    <!-- 查询设备状态历史 -->
+    <select id="selectDeviceStatusHistory" resultType="DeviceStatusHistory">
+        <choose>
+            <!-- 如果指定了interval参数，进行时间聚合采样 -->
+            <when test="dto.interval != null and dto.interval != ''">
+                SELECT
+                    MIN(id) AS id,
+                    device_id AS deviceId,
+                    <choose>
+                        <when test="dto.statusType != null and dto.statusType != ''">
+                            status_type AS statusType,
+                        </when>
+                        <otherwise>
+                            NULL AS statusType,
+                        </otherwise>
+                    </choose>
+                    NULL AS statusValue,
+                    NULL AS doorStatus,
+                    NULL AS doorControllerStatus,
+                    <choose>
+                        <!-- 1分钟间隔 -->
+                        <when test="dto.interval == '1m'">
+                            DATE_FORMAT(report_time, '%Y-%m-%d %H:%i:00') AS reportTime
+                        </when>
+                        <!-- 5分钟间隔 -->
+                        <when test="dto.interval == '5m'">
+                            DATE_FORMAT(
+                                DATE_ADD(
+                                    DATE_FORMAT(report_time, '%Y-%m-%d %H:00:00'),
+                                    INTERVAL FLOOR(MINUTE(report_time) / 5) * 5 MINUTE
+                                ),
+                                '%Y-%m-%d %H:%i:00'
+                            ) AS reportTime
+                        </when>
+                        <!-- 10分钟间隔 -->
+                        <when test="dto.interval == '10m'">
+                            DATE_FORMAT(
+                                DATE_ADD(
+                                    DATE_FORMAT(report_time, '%Y-%m-%d %H:00:00'),
+                                    INTERVAL FLOOR(MINUTE(report_time) / 10) * 10 MINUTE
+                                ),
+                                '%Y-%m-%d %H:%i:00'
+                            ) AS reportTime
+                        </when>
+                        <!-- 30分钟间隔 -->
+                        <when test="dto.interval == '30m'">
+                            DATE_FORMAT(
+                                DATE_ADD(
+                                    DATE_FORMAT(report_time, '%Y-%m-%d %H:00:00'),
+                                    INTERVAL FLOOR(MINUTE(report_time) / 30) * 30 MINUTE
+                                ),
+                                '%Y-%m-%d %H:%i:00'
+                            ) AS reportTime
+                        </when>
+                        <!-- 1小时间隔 -->
+                        <when test="dto.interval == '1h'">
+                            DATE_FORMAT(report_time, '%Y-%m-%d %H:00:00') AS reportTime
+                        </when>
+                        <!-- 默认按分钟 -->
+                        <otherwise>
+                            DATE_FORMAT(report_time, '%Y-%m-%d %H:%i:00') AS reportTime
+                        </otherwise>
+                    </choose>,
+                    MIN(created_at) AS createdAt
+                FROM device_status_history
+                WHERE device_id = #{id}
+                    AND report_time BETWEEN #{dto.startTime} AND #{dto.endTime}
+                <if test="dto.statusType != null and dto.statusType != ''">
+                    AND status_type = #{dto.statusType}
+                </if>
+                GROUP BY device_id
+                    <if test="dto.statusType != null and dto.statusType != ''">
+                        , status_type
+                    </if>
+                    <choose>
+                        <when test="dto.interval == '1m'">
+                            , DATE_FORMAT(report_time, '%Y-%m-%d %H:%i:00')
+                        </when>
+                        <when test="dto.interval == '5m'">
+                            , DATE_FORMAT(
+                                DATE_ADD(
+                                    DATE_FORMAT(report_time, '%Y-%m-%d %H:00:00'),
+                                    INTERVAL FLOOR(MINUTE(report_time) / 5) * 5 MINUTE
+                                ),
+                                '%Y-%m-%d %H:%i:00'
+                            )
+                        </when>
+                        <when test="dto.interval == '10m'">
+                            , DATE_FORMAT(
+                                DATE_ADD(
+                                    DATE_FORMAT(report_time, '%Y-%m-%d %H:00:00'),
+                                    INTERVAL FLOOR(MINUTE(report_time) / 10) * 10 MINUTE
+                                ),
+                                '%Y-%m-%d %H:%i:00'
+                            )
+                        </when>
+                        <when test="dto.interval == '30m'">
+                            , DATE_FORMAT(
+                                DATE_ADD(
+                                    DATE_FORMAT(report_time, '%Y-%m-%d %H:00:00'),
+                                    INTERVAL FLOOR(MINUTE(report_time) / 30) * 30 MINUTE
+                                ),
+                                '%Y-%m-%d %H:%i:00'
+                            )
+                        </when>
+                        <when test="dto.interval == '1h'">
+                            , DATE_FORMAT(report_time, '%Y-%m-%d %H:00:00')
+                        </when>
+                        <otherwise>
+                            , DATE_FORMAT(report_time, '%Y-%m-%d %H:%i:00')
+                        </otherwise>
+                    </choose>
+                ORDER BY reportTime ASC
+            </when>
+            <!-- 如果没有指定interval，返回原始数据 -->
+            <otherwise>
+                SELECT
+                    id,
+                    device_id AS deviceId,
+                    status_type AS statusType,
+                    status_value AS statusValue,
+                    door_status AS doorStatus,
+                    door_controller_status AS doorControllerStatus,
+                    report_time AS reportTime,
+                    created_at AS createdAt
+                FROM device_status_history
+                WHERE device_id = #{id}
+                    AND report_time BETWEEN #{dto.startTime} AND #{dto.endTime}
+                <if test="dto.statusType != null and dto.statusType != ''">
+                    AND status_type = #{dto.statusType}
+                </if>
+                ORDER BY report_time ASC
+            </otherwise>
+        </choose>
+    </select>
+    
+    <!-- 查询设备心跳记录 -->
+    <select id="selectDeviceHeartbeat" resultType="DeviceHeartbeat">
+        SELECT
+            id,
+            device_id AS deviceId,
+            heartbeat_time AS heartbeatTime,
+            ip_address AS ipAddress,
+            response_time AS responseTime,
+            extra_data AS extraData,
+            created_at AS createdAt
+        FROM device_heartbeat
+        WHERE device_id = #{id}
+        <if test="startTime != null and startTime != ''">
+            AND heartbeat_time &gt;= #{startTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            AND heartbeat_time &lt;= #{endTime}
+        </if>
+        ORDER BY heartbeat_time DESC
+        LIMIT #{limit}
+    </select>
+    
+    <!-- 插入设备心跳记录 -->
+    <insert id="insertHeartbeat" useGeneratedKeys="true" keyProperty="heartbeat.id">
+        INSERT INTO device_heartbeat(device_id, heartbeat_time, ip_address, extra_data, created_at)
+        VALUES(#{heartbeat.deviceId}, #{heartbeat.heartbeatTime}, #{heartbeat.ipAddress}, #{heartbeat.extraData}, NOW())
+    </insert>
+    
+    <!-- 插入设备状态历史记录 -->
+    <insert id="insertStatusHistory" useGeneratedKeys="true" keyProperty="statusHistory.id">
+        INSERT INTO device_status_history(device_id, status_type, door_status, door_controller_status, 
+            status_value, report_time, created_at)
+        VALUES(#{statusHistory.deviceId}, #{statusHistory.statusType}, #{statusHistory.doorStatus}, 
+            #{statusHistory.doorControllerStatus}, #{statusHistory.statusValue}, #{statusHistory.reportTime}, NOW())
+    </insert>
+    
+    <!-- 批量查询设备状态历史（支持设备列表 / deviceCode / groupId 筛选），带分页 -->
+    <select id="selectDeviceStatusHistoryBulk" resultType="DeviceStatusHistory">
+        <choose>
+            <when test="dto.interval != null and dto.interval != ''">
+                SELECT
+                    MIN(id) AS id,
+                    device_id AS deviceId,
+                    <choose>
+                        <when test="dto.statusType != null and dto.statusType != ''">
+                            status_type AS statusType,
+                        </when>
+                        <otherwise>
+                            NULL AS statusType,
+                        </otherwise>
+                    </choose>
+                    NULL AS statusValue,
+                    NULL AS doorStatus,
+                    NULL AS doorControllerStatus,
+                    <choose>
+                        <when test="dto.interval == '1m'">
+                            DATE_FORMAT(report_time, '%Y-%m-%d %H:%i:00') AS reportTime
+                        </when>
+                        <when test="dto.interval == '5m'">
+                            DATE_FORMAT(
+                                DATE_ADD(
+                                    DATE_FORMAT(report_time, '%Y-%m-%d %H:00:00'),
+                                    INTERVAL FLOOR(MINUTE(report_time) / 5) * 5 MINUTE
+                                ),
+                                '%Y-%m-%d %H:%i:00'
+                            ) AS reportTime
+                        </when>
+                        <when test="dto.interval == '10m'">
+                            DATE_FORMAT(
+                                DATE_ADD(
+                                    DATE_FORMAT(report_time, '%Y-%m-%d %H:00:00'),
+                                    INTERVAL FLOOR(MINUTE(report_time) / 10) * 10 MINUTE
+                                ),
+                                '%Y-%m-%d %H:%i:00'
+                            ) AS reportTime
+                        </when>
+                        <when test="dto.interval == '30m'">
+                            DATE_FORMAT(
+                                DATE_ADD(
+                                    DATE_FORMAT(report_time, '%Y-%m-%d %H:00:00'),
+                                    INTERVAL FLOOR(MINUTE(report_time) / 30) * 30 MINUTE
+                                ),
+                                '%Y-%m-%d %H:%i:00'
+                            ) AS reportTime
+                        </when>
+                        <when test="dto.interval == '1h'">
+                            DATE_FORMAT(report_time, '%Y-%m-%d %H:00:00') AS reportTime
+                        </when>
+                        <otherwise>
+                            DATE_FORMAT(report_time, '%Y-%m-%d %H:%i:00') AS reportTime
+                        </otherwise>
+                    </choose>,
+                    MIN(created_at) AS createdAt
+                FROM device_status_history dsh
+                <where>
+                    <if test="deviceIds != null and deviceIds.size() > 0">
+                        AND device_id IN
+                        <foreach collection="deviceIds" item="id" open="(" separator="," close=")">
+                            #{id}
+                        </foreach>
+                    </if>
+                    <if test="deviceCode != null and deviceCode != ''">
+                        AND device_id IN (SELECT id FROM device WHERE device_code = #{deviceCode})
+                    </if>
+                    <if test="groupId != null">
+                        AND device_id IN (SELECT id FROM device WHERE group_id = #{groupId})
+                    </if>
+                    AND report_time BETWEEN #{dto.startTime} AND #{dto.endTime}
+                    <if test="dto.statusType != null and dto.statusType != ''">
+                        AND status_type = #{dto.statusType}
+                    </if>
+                </where>
+                GROUP BY device_id
+                    <if test="dto.statusType != null and dto.statusType != ''">
+                        , status_type
+                    </if>
+                    <choose>
+                        <when test="dto.interval == '1m'">
+                            , DATE_FORMAT(report_time, '%Y-%m-%d %H:%i:00')
+                        </when>
+                        <when test="dto.interval == '5m'">
+                            , DATE_FORMAT(
+                                DATE_ADD(
+                                    DATE_FORMAT(report_time, '%Y-%m-%d %H:00:00'),
+                                    INTERVAL FLOOR(MINUTE(report_time) / 5) * 5 MINUTE
+                                ),
+                                '%Y-%m-%d %H:%i:00'
+                            )
+                        </when>
+                        <when test="dto.interval == '10m'">
+                            , DATE_FORMAT(
+                                DATE_ADD(
+                                    DATE_FORMAT(report_time, '%Y-%m-%d %H:00:00'),
+                                    INTERVAL FLOOR(MINUTE(report_time) / 10) * 10 MINUTE
+                                ),
+                                '%Y-%m-%d %H:%i:00'
+                            )
+                        </when>
+                        <when test="dto.interval == '30m'">
+                            , DATE_FORMAT(
+                                DATE_ADD(
+                                    DATE_FORMAT(report_time, '%Y-%m-%d %H:00:00'),
+                                    INTERVAL FLOOR(MINUTE(report_time) / 30) * 30 MINUTE
+                                ),
+                                '%Y-%m-%d %H:%i:00'
+                            )
+                        </when>
+                        <when test="dto.interval == '1h'">
+                            , DATE_FORMAT(report_time, '%Y-%m-%d %H:00:00')
+                        </when>
+                        <otherwise>
+                            , DATE_FORMAT(report_time, '%Y-%m-%d %H:%i:00')
+                        </otherwise>
+                    </choose>
+                ORDER BY
+                <choose>
+                    <when test="dto.sort != null and dto.sort == 'reportTime_asc'">reportTime ASC</when>
+                    <otherwise>reportTime DESC</otherwise>
+                </choose>
+                LIMIT #{offset}, #{limit}
+            </when>
+            <otherwise>
+                SELECT
+                    id,
+                    device_id AS deviceId,
+                    status_type AS statusType,
+                    status_value AS statusValue,
+                    door_status AS doorStatus,
+                    door_controller_status AS doorControllerStatus,
+                    report_time AS reportTime,
+                    created_at AS createdAt
+                FROM device_status_history dsh
+                <where>
+                    <if test="deviceIds != null and deviceIds.size() > 0">
+                        AND device_id IN
+                        <foreach collection="deviceIds" item="id" open="(" separator="," close=")">
+                            #{id}
+                        </foreach>
+                    </if>
+                    <if test="deviceCode != null and deviceCode != ''">
+                        AND device_id IN (SELECT id FROM device WHERE device_code = #{deviceCode})
+                    </if>
+                    <if test="groupId != null">
+                        AND device_id IN (SELECT id FROM device WHERE group_id = #{groupId})
+                    </if>
+                    AND report_time BETWEEN #{dto.startTime} AND #{dto.endTime}
+                    <if test="dto.statusType != null and dto.statusType != ''">
+                        AND status_type = #{dto.statusType}
+                    </if>
+                </where>
+                ORDER BY
+                <choose>
+                    <when test="dto.sort != null and dto.sort == 'reportTime_asc'">report_time ASC</when>
+                    <otherwise>report_time DESC</otherwise>
+                </choose>
+                LIMIT #{offset}, #{limit}
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 批量查询计数（用于分页） -->
+    <select id="countDeviceStatusHistoryBulk" resultType="long">
+        <choose>
+            <when test="dto.interval != null and dto.interval != ''">
+                SELECT COUNT(1) FROM (
+                    SELECT
+                        device_id,
+                        <choose>
+                            <when test="dto.interval == '1m'">
+                                DATE_FORMAT(report_time, '%Y-%m-%d %H:%i:00')
+                            </when>
+                            <when test="dto.interval == '5m'">
+                                DATE_FORMAT(
+                                    DATE_ADD(
+                                        DATE_FORMAT(report_time, '%Y-%m-%d %H:00:00'),
+                                        INTERVAL FLOOR(MINUTE(report_time) / 5) * 5 MINUTE
+                                    ),
+                                    '%Y-%m-%d %H:%i:00'
+                                )
+                            </when>
+                            <when test="dto.interval == '10m'">
+                                DATE_FORMAT(
+                                    DATE_ADD(
+                                        DATE_FORMAT(report_time, '%Y-%m-%d %H:00:00'),
+                                        INTERVAL FLOOR(MINUTE(report_time) / 10) * 10 MINUTE
+                                    ),
+                                    '%Y-%m-%d %H:%i:00'
+                                )
+                            </when>
+                            <when test="dto.interval == '30m'">
+                                DATE_FORMAT(
+                                    DATE_ADD(
+                                        DATE_FORMAT(report_time, '%Y-%m-%d %H:00:00'),
+                                        INTERVAL FLOOR(MINUTE(report_time) / 30) * 30 MINUTE
+                                    ),
+                                    '%Y-%m-%d %H:%i:00'
+                                )
+                            </when>
+                            <when test="dto.interval == '1h'">
+                                DATE_FORMAT(report_time, '%Y-%m-%d %H:00:00')
+                            </when>
+                            <otherwise>
+                                DATE_FORMAT(report_time, '%Y-%m-%d %H:%i:00')
+                            </otherwise>
+                        </choose> AS slot
+                    FROM device_status_history dsh
+                    <where>
+                        <if test="deviceIds != null and deviceIds.size() > 0">
+                            AND device_id IN
+                            <foreach collection="deviceIds" item="id" open="(" separator="," close=")">
+                                #{id}
+                            </foreach>
+                        </if>
+                        <if test="deviceCode != null and deviceCode != ''">
+                            AND device_id IN (SELECT id FROM device WHERE device_code = #{deviceCode})
+                        </if>
+                        <if test="groupId != null">
+                            AND device_id IN (SELECT id FROM device WHERE group_id = #{groupId})
+                        </if>
+                        AND report_time BETWEEN #{dto.startTime} AND #{dto.endTime}
+                        <if test="dto.statusType != null and dto.statusType != ''">
+                            AND status_type = #{dto.statusType}
+                        </if>
+                    </where>
+                    GROUP BY device_id, slot
+                ) t
+            </when>
+            <otherwise>
+                SELECT COUNT(1) FROM device_status_history dsh
+                <where>
+                    <if test="deviceIds != null and deviceIds.size() > 0">
+                        AND device_id IN
+                        <foreach collection="deviceIds" item="id" open="(" separator="," close=")">
+                            #{id}
+                        </foreach>
+                    </if>
+                    <if test="deviceCode != null and deviceCode != ''">
+                        AND device_id IN (SELECT id FROM device WHERE device_code = #{deviceCode})
+                    </if>
+                    <if test="groupId != null">
+                        AND device_id IN (SELECT id FROM device WHERE group_id = #{groupId})
+                    </if>
+                    AND report_time BETWEEN #{dto.startTime} AND #{dto.endTime}
+                    <if test="dto.statusType != null and dto.statusType != ''">
+                        AND status_type = #{dto.statusType}
+                    </if>
+                </where>
+            </otherwise>
+        </choose>
+    </select>
+    
+</mapper>
+

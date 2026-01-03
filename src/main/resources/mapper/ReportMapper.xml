@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.distributed.monitor.mapper.ReportMapper">
+    
+    <!-- 查询报表配置列表 -->
+    <select id="selectReportConfigs" resultType="ReportConfig">
+        SELECT
+            id,
+            report_name AS reportName,
+            report_code AS reportCode,
+            report_type AS reportType,
+            report_template AS reportTemplate,
+            query_sql AS querySql,
+            params_schema AS paramsSchema,
+            description,
+            is_active AS isActive,
+            created_at AS createdAt,
+            updated_at AS updatedAt
+        FROM report_config
+        WHERE is_active = 1
+        ORDER BY created_at DESC
+    </select>
+    
+    <!-- 根据编码查询报表配置 -->
+    <select id="selectReportConfigByCode" resultType="ReportConfig">
+        SELECT
+            id,
+            report_name AS reportName,
+            report_code AS reportCode,
+            report_type AS reportType,
+            report_template AS reportTemplate,
+            query_sql AS querySql,
+            params_schema AS paramsSchema,
+            description,
+            is_active AS isActive,
+            created_at AS createdAt,
+            updated_at AS updatedAt
+        FROM report_config
+        WHERE report_code = #{reportCode} AND is_active = 1
+    </select>
+    
+    <!-- 插入报表生成记录 -->
+    <insert id="insertReportGenerateLog" useGeneratedKeys="true" keyProperty="log.id">
+        INSERT INTO report_generate_log (
+            report_id, report_name, generate_user_id, params,
+            file_format, status, generate_time, created_at
+        ) VALUES (
+            #{log.reportId}, #{log.reportName}, #{log.generateUserId}, #{log.params},
+            #{log.fileFormat}, #{log.status}, #{log.generateTime}, NOW()
+        )
+    </insert>
+    
+    <!-- 更新报表生成记录 -->
+    <update id="updateReportGenerateLog">
+        UPDATE report_generate_log
+        <set>
+            <if test="log.filePath != null">file_path = #{log.filePath},</if>
+            <if test="log.fileSize != null">file_size = #{log.fileSize},</if>
+            <if test="log.status != null">status = #{log.status},</if>
+            <if test="log.errorMessage != null">error_message = #{log.errorMessage},</if>
+            <if test="log.completeTime != null">complete_time = #{log.completeTime},</if>
+        </set>
+        WHERE id = #{log.id}
+    </update>
+    
+    <!-- 统计报表生成记录数量 -->
+    <select id="countReportLogs" resultType="long">
+        SELECT COUNT(1) 
+        FROM report_generate_log rgl
+        LEFT JOIN report_config rc ON rgl.report_id = rc.id
+        <where>
+            <if test="reportCode != null and reportCode != ''">
+                AND rc.report_code = #{reportCode}
+            </if>
+            <if test="status != null and status != ''">
+                AND rgl.status = #{status}
+            </if>
+            <if test="startTime != null and startTime != ''">
+                AND rgl.generate_time >= #{startTime}
+            </if>
+            <if test="endTime != null and endTime != ''">
+                AND rgl.generate_time &lt;= #{endTime}
+            </if>
+        </where>
+    </select>
+    
+    <!-- 查询报表生成记录 -->
+    <select id="selectReportLogs" resultType="ReportGenerateLog">
+        SELECT
+            rgl.id,
+            rgl.report_id AS reportId,
+            rgl.report_name AS reportName,
+            rc.report_code AS reportCode,
+            rgl.generate_user_id AS generateUserId,
+            rgl.params,
+            rgl.file_format AS fileFormat,
+            rgl.file_path AS filePath,
+            rgl.file_size AS fileSize,
+            rgl.status,
+            rgl.error_message AS errorMessage,
+            rgl.generate_time AS generateTime,
+            rgl.complete_time AS completeTime,
+            rgl.created_at AS createdAt
+        FROM report_generate_log rgl
+        LEFT JOIN report_config rc ON rgl.report_id = rc.id
+        <where>
+            <if test="reportCode != null and reportCode != ''">
+                AND rc.report_code = #{reportCode}
+            </if>
+            <if test="status != null and status != ''">
+                AND rgl.status = #{status}
+            </if>
+            <if test="startTime != null and startTime != ''">
+                AND rgl.generate_time >= #{startTime}
+            </if>
+            <if test="endTime != null and endTime != ''">
+                AND rgl.generate_time &lt;= #{endTime}
+            </if>
+        </where>
+        ORDER BY rgl.generate_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+    
+    <!-- 根据ID查询报表生成记录 -->
+    <select id="selectReportLogById" resultType="ReportGenerateLog">
+        SELECT
+            id,
+            report_id AS reportId,
+            report_name AS reportName,
+            generate_user_id AS generateUserId,
+            params,
+            file_format AS fileFormat,
+            file_path AS filePath,
+            file_size AS fileSize,
+            status,
+            error_message AS errorMessage,
+            generate_time AS generateTime,
+            complete_time AS completeTime,
+            created_at AS createdAt
+        FROM report_generate_log
+        WHERE id = #{id}
+    </select>
+    
+</mapper>
+

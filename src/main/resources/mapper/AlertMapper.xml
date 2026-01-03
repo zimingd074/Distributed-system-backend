@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.distributed.monitor.mapper.AlertMapper">
+    
+    <!-- 统计告警数量 -->
+    <select id="countAlerts" resultType="long">
+        SELECT COUNT(1) FROM alert_record ar
+        <where>
+            <if test="dto.deviceId != null">
+                AND ar.device_id = #{dto.deviceId}
+            </if>
+            <if test="dto.alertLevel != null and dto.alertLevel != ''">
+                AND ar.alert_level = #{dto.alertLevel}
+            </if>
+            <if test="dto.status != null and dto.status != ''">
+                AND ar.status = #{dto.status}
+            </if>
+            <if test="dto.startTime != null and dto.startTime != ''">
+                AND ar.alert_time >= #{dto.startTime}
+            </if>
+            <if test="dto.endTime != null and dto.endTime != ''">
+                AND ar.alert_time &lt;= #{dto.endTime}
+            </if>
+        </where>
+    </select>
+    
+    <!-- 查询告警列表 -->
+    <select id="selectAlertList" resultType="AlertRecord">
+        SELECT
+            ar.id,
+            ar.alert_no AS alertNo,
+            ar.rule_id AS ruleId,
+            ar.device_id AS deviceId,
+            ar.alert_level AS alertLevel,
+            ar.alert_type AS alertType,
+            ar.alert_message AS alertMessage,
+            ar.alert_data AS alertData,
+            ar.status,
+            ar.alert_time AS alertTime,
+            ar.confirmed_user_id AS confirmedUserId,
+            ar.confirmed_time AS confirmedTime,
+            ar.resolved_user_id AS resolvedUserId,
+            ar.resolved_time AS resolvedTime,
+            ar.resolve_remark AS resolveRemark,
+            ar.created_at AS createdAt,
+            ar.updated_at AS updatedAt
+        FROM alert_record ar
+        <where>
+            <if test="dto.deviceId != null">
+                AND ar.device_id = #{dto.deviceId}
+            </if>
+            <if test="dto.alertLevel != null and dto.alertLevel != ''">
+                AND ar.alert_level = #{dto.alertLevel}
+            </if>
+            <if test="dto.status != null and dto.status != ''">
+                AND ar.status = #{dto.status}
+            </if>
+            <if test="dto.startTime != null and dto.startTime != ''">
+                AND ar.alert_time >= #{dto.startTime}
+            </if>
+            <if test="dto.endTime != null and dto.endTime != ''">
+                AND ar.alert_time &lt;= #{dto.endTime}
+            </if>
+        </where>
+        ORDER BY ar.alert_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+    
+    <!-- 根据ID查询告警 -->
+    <select id="selectAlertById" resultType="AlertRecord">
+        SELECT
+            id,
+            alert_no AS alertNo,
+            rule_id AS ruleId,
+            device_id AS deviceId,
+            alert_level AS alertLevel,
+            alert_type AS alertType,
+            alert_message AS alertMessage,
+            alert_data AS alertData,
+            status,
+            alert_time AS alertTime,
+            confirmed_user_id AS confirmedUserId,
+            confirmed_time AS confirmedTime,
+            resolved_user_id AS resolvedUserId,
+            resolved_time AS resolvedTime,
+            resolve_remark AS resolveRemark,
+            created_at AS createdAt,
+            updated_at AS updatedAt
+        FROM alert_record
+        WHERE id = #{id}
+    </select>
+    
+    <!-- 更新告警状态 -->
+    <update id="updateAlertStatus">
+        UPDATE alert_record
+        <set>
+            status = #{status},
+            <if test="status == 'confirmed'">
+                confirmed_user_id = #{userId},
+                confirmed_time = NOW(),
+            </if>
+            <if test="status == 'resolved'">
+                resolved_user_id = #{userId},
+                resolved_time = NOW(),
+                <if test="remark != null and remark != ''">
+                    resolve_remark = #{remark},
+                </if>
+            </if>
+            <if test="status == 'ignored'">
+                <!-- ignored状态只更新status，不更新resolved相关字段 -->
+            </if>
+            updated_at = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+    
+    <!-- 查询告警统计 -->
+    <select id="selectAlertStatistics" resultType="com.distributed.monitor.vo.alert.AlertStatisticsVO">
+        SELECT
+            CAST(COUNT(1) AS SIGNED) AS totalCount,
+            CAST(SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS SIGNED) AS pendingCount,
+            CAST(SUM(CASE WHEN status = 'confirmed' THEN 1 ELSE 0 END) AS SIGNED) AS confirmedCount,
+            CAST(SUM(CASE WHEN status = 'resolved' THEN 1 ELSE 0 END) AS SIGNED) AS resolvedCount,
+            CAST(SUM(CASE WHEN alert_level = 'critical' THEN 1 ELSE 0 END) AS SIGNED) AS criticalCount,
+            CAST(SUM(CASE WHEN alert_level = 'error' THEN 1 ELSE 0 END) AS SIGNED) AS errorCount,
+            CAST(SUM(CASE WHEN alert_level = 'warning' THEN 1 ELSE 0 END) AS SIGNED) AS warningCount
+        FROM alert_record
+        <where>
+            <if test="timeRange == 'today'">
+                AND DATE(alert_time) = CURDATE()
+            </if>
+            <if test="timeRange == 'week'">
+                AND alert_time >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+            </if>
+            <if test="timeRange == 'month'">
+                AND alert_time >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+            </if>
+        </where>
+    </select>
+    
+    <!-- 查询告警级别分布 -->
+    <select id="selectAlertLevelDistribution" resultType="com.distributed.monitor.vo.alert.AlertStatisticsVO$LevelDistribution">
+        SELECT
+            alert_level AS level,
+            CAST(COUNT(1) AS SIGNED) AS count
+        FROM alert_record
+        <where>
+            <if test="timeRange == 'today'">
+                AND DATE(alert_time) = CURDATE()
+            </if>
+            <if test="timeRange == 'week'">
+                AND alert_time >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+            </if>
+            <if test="timeRange == 'month'">
+                AND alert_time >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+            </if>
+        </where>
+        GROUP BY alert_level
+        ORDER BY 
+            CASE alert_level
+                WHEN 'critical' THEN 1
+                WHEN 'error' THEN 2
+                WHEN 'warning' THEN 3
+                WHEN 'info' THEN 4
+                ELSE 5
+            END
+    </select>
+    
+    <!-- 查询告警类型分布 -->
+    <select id="selectAlertTypeDistribution" resultType="com.distributed.monitor.vo.alert.AlertStatisticsVO$TypeDistribution">
+        SELECT
+            alert_type AS type,
+            CAST(COUNT(1) AS SIGNED) AS count
+        FROM alert_record
+        <where>
+            <if test="timeRange == 'today'">
+                AND DATE(alert_time) = CURDATE()
+            </if>
+            <if test="timeRange == 'week'">
+                AND alert_time >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+            </if>
+            <if test="timeRange == 'month'">
+                AND alert_time >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+            </if>
+        </where>
+        GROUP BY alert_type
+        ORDER BY count DESC
+        LIMIT 20
+    </select>
+    
+    <!-- 插入告警记录 -->
+    <insert id="insertAlert" useGeneratedKeys="true" keyProperty="alert.id">
+        INSERT INTO alert_record (
+            alert_no, rule_id, device_id, alert_level, alert_type, alert_message, alert_data, status, alert_time, created_at, updated_at
+        ) VALUES (
+            #{alert.alertNo}, #{alert.ruleId}, #{alert.deviceId}, #{alert.alertLevel}, #{alert.alertType}, #{alert.alertMessage}, #{alert.alertData}, #{alert.status}, #{alert.alertTime}, NOW(), NOW()
+        )
+    </insert>
+
+</mapper>
+

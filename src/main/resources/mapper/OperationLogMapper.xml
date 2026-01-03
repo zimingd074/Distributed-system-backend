@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.distributed.monitor.mapper.OperationLogMapper">
+    
+    <!-- 统计操作日志数量 -->
+    <select id="countOperationLogs" resultType="long">
+        SELECT COUNT(1) FROM sys_operation_log
+        <where>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+            <if test="operationType != null and operationType != ''">
+                AND operation_type = #{operationType}
+            </if>
+            <if test="operationModule != null and operationModule != ''">
+                AND operation_module = #{operationModule}
+            </if>
+            <if test="startTime != null and startTime != ''">
+                AND created_at >= #{startTime}
+            </if>
+            <if test="endTime != null and endTime != ''">
+                AND created_at &lt;= #{endTime}
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+    </select>
+    
+    <!-- 查询操作日志列表 -->
+    <select id="selectOperationLogs" resultType="SysOperationLog">
+        SELECT
+            id,
+            user_id AS userId,
+            username,
+            operation_type AS operationType,
+            operation_module AS operationModule,
+            operation_desc AS operationDesc,
+            request_method AS requestMethod,
+            request_url AS requestUrl,
+            request_params AS requestParams,
+            response_data AS responseData,
+            ip_address AS ipAddress,
+            user_agent AS userAgent,
+            status,
+            error_message AS errorMessage,
+            execute_time AS executeTime,
+            created_at AS createdAt
+        FROM sys_operation_log
+        <where>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+            <if test="operationType != null and operationType != ''">
+                AND operation_type = #{operationType}
+            </if>
+            <if test="operationModule != null and operationModule != ''">
+                AND operation_module = #{operationModule}
+            </if>
+            <if test="startTime != null and startTime != ''">
+                AND created_at >= #{startTime}
+            </if>
+            <if test="endTime != null and endTime != ''">
+                AND created_at &lt;= #{endTime}
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+        ORDER BY created_at DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+    
+    <!-- 插入操作日志 -->
+    <insert id="insertOperationLog" useGeneratedKeys="true" keyProperty="log.id">
+        INSERT INTO sys_operation_log (
+            user_id, username, operation_type, operation_module, operation_desc,
+            request_method, request_url, request_params, response_data,
+            ip_address, user_agent, status, error_message, execute_time, created_at
+        ) VALUES (
+            #{log.userId}, #{log.username}, #{log.operationType}, #{log.operationModule}, #{log.operationDesc},
+            #{log.requestMethod}, #{log.requestUrl}, #{log.requestParams}, #{log.responseData},
+            #{log.ipAddress}, #{log.userAgent}, #{log.status}, #{log.errorMessage}, #{log.executeTime}, NOW()
+        )
+    </insert>
+    
+</mapper>
+

@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.distributed.monitor.mapper.CommandMapper">
+    
+    <!-- 查询命令列表 -->
+    <select id="selectCommandList" resultType="DeviceCommand">
+        SELECT
+            id,
+            command_code AS commandCode,
+            command_name AS commandName,
+            command_type AS commandType,
+            description,
+            param_schema AS paramSchema,
+            is_active AS isActive,
+            created_at AS createdAt,
+            updated_at AS updatedAt
+        FROM device_command
+        WHERE is_active = 1
+        <if test="commandType != null and commandType != ''">
+            AND command_type = #{commandType}
+        </if>
+        ORDER BY created_at DESC
+    </select>
+    
+    <!-- 根据命令编码查询命令 -->
+    <select id="selectCommandByCode" resultType="DeviceCommand">
+        SELECT
+            id,
+            command_code AS commandCode,
+            command_name AS commandName,
+            command_type AS commandType,
+            description,
+            param_schema AS paramSchema,
+            is_active AS isActive,
+            created_at AS createdAt,
+            updated_at AS updatedAt
+        FROM device_command
+        WHERE command_code = #{commandCode}
+    </select>
+    
+    <!-- 插入命令执行记录 -->
+    <insert id="insertCommandLog" useGeneratedKeys="true" keyProperty="log.id">
+        INSERT INTO device_command_log (
+            device_id, command_id, command_code, command_params,
+            execute_user_id, execute_time, status, created_at
+        ) VALUES (
+            #{log.deviceId}, #{log.commandId}, #{log.commandCode}, #{log.commandParams},
+            #{log.executeUserId}, #{log.executeTime}, #{log.status}, NOW()
+        )
+    </insert>
+    
+    <!-- 根据ID查询命令执行记录 -->
+    <select id="selectCommandLogById" resultType="DeviceCommandLog">
+        SELECT
+            id,
+            device_id AS deviceId,
+            command_id AS commandId,
+            command_code AS commandCode,
+            command_params AS commandParams,
+            execute_user_id AS executeUserId,
+            execute_time AS executeTime,
+            status,
+            response_data AS responseData,
+            error_message AS errorMessage,
+            response_time AS responseTime,
+            duration,
+            created_at AS createdAt
+        FROM device_command_log
+        WHERE id = #{id}
+    </select>
+    
+    <!-- 更新命令执行记录 -->
+    <update id="updateCommandLog">
+        UPDATE device_command_log
+        <set>
+            <if test="log.status != null">status = #{log.status},</if>
+            <if test="log.responseData != null">response_data = #{log.responseData},</if>
+            <if test="log.errorMessage != null">error_message = #{log.errorMessage},</if>
+            <if test="log.responseTime != null">response_time = #{log.responseTime},</if>
+            <if test="log.duration != null">duration = #{log.duration},</if>
+        </set>
+        WHERE id = #{log.id}
+    </update>
+    
+    <!-- 查询设备待执行命令 -->
+    <select id="selectPendingCommands" resultType="DeviceCommandLog">
+        SELECT
+            id,
+            device_id AS deviceId,
+            command_id AS commandId,
+            command_code AS commandCode,
+            command_params AS commandParams,
+            execute_time AS executeTime,
+            status
+        FROM device_command_log
+        WHERE device_id = #{deviceId} AND status = 'pending'
+        ORDER BY execute_time ASC
+    </select>
+    
+    <!-- 统计命令执行历史数量 -->
+    <select id="countCommandHistory" resultType="long">
+        SELECT COUNT(1) FROM device_command_log
+        WHERE device_id = #{deviceId}
+    </select>
+    
+    <!-- 查询命令执行历史 -->
+    <select id="selectCommandHistory" resultType="DeviceCommandLog">
+        SELECT
+            id,
+            device_id AS deviceId,
+            command_id AS commandId,
+            command_code AS commandCode,
+            command_params AS commandParams,
+            execute_user_id AS executeUserId,
+            execute_time AS executeTime,
+            status,
+            response_data AS responseData,
+            error_message AS errorMessage,
+            response_time AS responseTime,
+            duration,
+            created_at AS createdAt
+        FROM device_command_log
+        WHERE device_id = #{deviceId}
+        ORDER BY execute_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+    
+</mapper>
+
